@@ -1,8 +1,18 @@
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, query, where } from "firebase/firestore";
+import { addDoc, collection, doc, DocumentData, getDoc, getDocs, getFirestore, query, where } from "firebase/firestore";
 import app from "./init";
 import bcrypt from "bcrypt";
 
 const firestore = getFirestore(app);
+
+interface User {
+  id: string;
+  email: string;
+  password: string; // The hashed password stored in Firestore
+  fullname?: string;
+  phone?: string;
+  role?: string;
+}
+
 
 export async function retriveData(collectionName: string) {
   const snapshot = await getDocs(collection(firestore,collectionName));
@@ -64,4 +74,24 @@ export async function signUp(userData: {
     console.error(error);
     callback({ status: false, message: 'Error on server side' });
   }
+}
+
+export async function signIn(email: string): Promise<DocumentData | null>  {
+    const q = query(
+      collection(firestore, "users"),
+      where("email", "==", email),
+    );
+
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    if(data) {
+      return data[0] as User;
+    } else {
+      return null;
+    }
+
 }
